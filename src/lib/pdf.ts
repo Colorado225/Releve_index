@@ -41,6 +41,10 @@ function escapeText(text: string): string {
     const code = ch.codePointAt(0) ?? 0x3f;
     let b = code;
     if (code === 0x20ac) b = 0x80; // €
+    // Espaces typographiques français (séparateurs de milliers produits par
+    // toLocaleString("fr-FR")) : WinAnsi ignore les espaces insécables, on
+    // les ramène à une espace ordinaire pour éviter un "? " dans le PDF.
+    else if (code === 0x202f || code === 0x00a0 || code === 0x2009) b = 0x20;
     else if (code > 0xff) b = 0x3f; // non représentable → '?'
     let c = String.fromCharCode(b);
     if (c === "\\" || c === "(" || c === ")") c = "\\" + c;

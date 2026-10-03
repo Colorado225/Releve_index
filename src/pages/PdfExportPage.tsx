@@ -5,6 +5,9 @@ import { Loader } from "../components/Loader";
 import { useToast } from "../components/Toast";
 import { inferTypeCompteur } from "../lib/tarifsCI";
 import { useStore } from "../store";
+import { buildPdf } from "../lib/pdf";
+import { buildExportReport, computeExportRows } from "../lib/exportReport";
+import type { RawReading } from "../lib/exportReport";
 import * as XLSX from "xlsx";
 
 // Types pour le formulaire d'export (PDF + Excel)
@@ -32,12 +35,6 @@ type FormData = {
 
     // Relevés bruts (format JSON ou texte)
     relevesBruts: string;
-};
-
-// Type pour un relevé brut validé
-type RawReading = {
-    date_releve: string;
-    index_valeur: number;
 };
 
 const defaultFormData: FormData = {
@@ -165,55 +162,24 @@ export function PdfExportPage() {
 
         setIsGenerating(true);
         try {
-            // URL dynamique pour fonctionner en local et sur Vercel
-            const apiUrl = import.meta.env.DEV
-                ? 'http://localhost:8000/api/generate-pdf'
-                : '/api/generate-pdf';
+            // Génération 100 % locale (aucun appel réseau) : le PDF est
+            // construit par le générateur maison src/lib/pdf.ts, ce qui
+            // préserve le fonctionnement hors-ligne et évite un backend.
+            const numeroDoc = `HIST-${Date.now().toString().slice(-8)}`;
+            const rows = computeExportRows(
+                parsedReadings,
+                formData.compteurPrixUnitaire,
+                formData.compteurAbonnementJour,
+            );
+            const bytes = buildPdf(buildExportReport(formData, rows, numeroDoc));
 
-            // Appel au backend Python pour générer le PDF
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                mode: 'cors',
-                body: JSON.stringify({
-                    societe: {
-                        nom: formData.societeNom,
-                        adresse: formData.societeAdresse,
-                        email: formData.societeEmail,
-                        telephone: formData.societeTelephone,
-                    },
-                    abonne: {
-                        nom: formData.abonneNom,
-                        adresse: formData.abonneAdresse,
-                        email: formData.abonneEmail,
-                    },
-                    compteur: {
-                        type: formData.compteurType,
-                        numero: formData.compteurNumero,
-                        unite: formData.compteurType === "eau" ? "m³" : "kWh",
-                    },
-                    releves_bruts: parsedReadings,
-                    periode: {
-                        debut: formData.periodeDebut,
-                        fin: formData.periodeFin,
-                    },
-                    prix_unitaire: formData.compteurPrixUnitaire,
-                    prix_abonnement_jour: formData.compteurAbonnementJour,
-                    numero_doc: `HIST-${Date.now().toString().slice(-8)}`,
-                }),
-            });
-
-            if (!response.ok) throw new Error("Erreur lors de la génération");
-
-            // Télécharger le PDF généré
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
+            const url = window.URL.createObjectURL(
+                new Blob([bytes], { type: 'application/pdf' })
+            );
             const a = document.createElement('a');
             a.href = url;
             a.download = `historique_${formData.compteurNumero || 'releves'}_${new Date().toISOString().slice(0, 10)}.pdf`;
-            document.body.appendChild(a);
+            document.body.append(a);
             a.click();
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
