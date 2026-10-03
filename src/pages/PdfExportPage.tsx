@@ -165,8 +165,13 @@ export function PdfExportPage() {
 
         setIsGenerating(true);
         try {
+            // URL dynamique pour fonctionner en local et sur Vercel
+            const apiUrl = import.meta.env.DEV
+                ? 'http://localhost:8000/api/generate-pdf'
+                : '/api/generate-pdf';
+
             // Appel au backend Python pour générer le PDF
-            const response = await fetch('http://localhost:8000/api/generate-pdf', {
+            const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

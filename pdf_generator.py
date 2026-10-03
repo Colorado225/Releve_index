@@ -179,9 +179,16 @@ class GeneratePdfRequest(BaseModel):
 app = FastAPI(title="API Génération PDF Relevés", version="1.0")
 
 # Configuration CORS pour accepter les requêtes depuis l'application React
+# En production, Vercel hébergera le frontend et le backend sur le même domaine
+origins = [
+    "http://localhost:5173",    # Vite dev server
+    "http://localhost:8000",    # FastAPI local
+    "https://*.vercel.app",     # Tous les sous-domaines Vercel
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # En production, remplacez par votre domaine
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
