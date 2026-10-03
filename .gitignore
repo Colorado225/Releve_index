@@ -1,5 +1,10 @@
 node_modules
 
+# Artefacts de build : régénérés par `npm run build` (et par Vercel).
+# Le dossier dist/ reste dans l'historique (il y était au premier commit),
+# mais ne doit plus être suivi.
+dist
+
 # Variables d'environnement (jamais commitées).
 # .env.example est conservé comme modèle.
 .env
