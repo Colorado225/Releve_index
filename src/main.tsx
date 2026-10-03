@@ -1,5 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { Analytics } from "@vercel/analytics/react";
 import App from "./App";
 import { applyTheme, getTheme } from "./lib/theme";
 import "./index.css";
@@ -11,5 +12,8 @@ applyTheme(getTheme());
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <App />
+    {/* Statistiques Vercel (compatible PWA : pas de rechargement de page).
+        `mode="auto"` n'émet rien en développement. */}
+    <Analytics mode="auto" />
   </React.StrictMode>,
 );
